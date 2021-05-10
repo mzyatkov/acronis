@@ -1,0 +1,48 @@
+{
+  "tasks": [
+    {
+      "type": "shell",
+      "label": "g++ build active file",
+      "command": "/usr/bin/g++",
+      "args": [
+        "-g",
+        "${file}",
+        "-o",
+        "${fileDirname}/${fileBasenameNoExtension}"
+      ],
+      "options": {
+        "cwd": "/usr/bin",
+        "env": {
+          "PATH": "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+        }
+      },
+      "problemMatcher": [],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+    {
+      "type": "shell",
+      "label": "C/C++: gсс build active file",
+      "command": "/usr/bin/gсс",
+      "args": [
+          "-g",
+          "${fileDirname}/*.c",
+          "-o",
+          "${fileDirname}/${fileBasenameNoExtension}"
+      ],
+      "options": {
+        "cwd": "/usr/bin",
+        "env": {
+          "PATH": "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+        }
+      },
+      "group": {
+          "kind": "build",
+          "isDefault": true
+      }
+  }
+  ],
+  "version": "2.0.0"
+}

@@ -1,0 +1,12 @@
+{
+    "python.pythonPath": "/home/mihail/anaconda3/bin/python",
+    "python.linting.pylintEnabled": true,
+    "python.linting.enabled": true,
+    "python.autoComplete.extraPaths": [
+        "~/anaconda3/bin"
+        ],
+    "python.languageServer": "Pylance",
+    "python.analysis.extraPaths": [
+        "~/anaconda3/bin"
+    ]
+}
