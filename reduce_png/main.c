@@ -1,10 +1,16 @@
 #include "io_png.h"
 #include <limits.h>
+#include <time.h>
+#include <string.h>
+
 #define PX_DEL_COUNT 1 //количество пикселей для удаления за один раз
+#define WEIGHT_ALGO 1 //функция вычисления веса
+#define COPY_ALGO 2 // 1 - побитовое копирование, 2 - memmove
 EXTERN int width, height;
 EXTERN png_byte color_type;
 EXTERN png_byte bit_depth;
 EXTERN png_bytep *row_pointers;
+
 int norm(png_bytep a, png_bytep b)
 {
     int ans = 0;
@@ -14,7 +20,7 @@ int norm(png_bytep a, png_bytep b)
     }
     return ans;
 }
-
+#if WEIGHT_ALGO == 1
 int px_weight(int x, int y)
 {
     int ans = 0;
@@ -36,6 +42,42 @@ int px_weight(int x, int y)
     }
     return ans;
 }
+#elif WEIGHT_ALGO == 2
+int px_weight(int x, int y)
+{
+    int ans = 0;
+    if (x != 0)
+    {
+        ans += norm(&row_pointers[y][(x - 1) * 4], &row_pointers[y][x * 4]);
+        if (y != 0) {
+            ans += norm(&row_pointers[y-1][(x - 1) * 4], &row_pointers[y][x * 4]);
+
+        }
+        if (y != height - 1) {
+            ans += norm(&row_pointers[y+1][(x - 1) * 4], &row_pointers[y][x * 4]);
+        }
+    }
+    if (y != 0)
+    {
+        ans += norm(&row_pointers[y - 1][x * 4], &row_pointers[y][x * 4]);
+        if (x != width - 1) {
+            ans += norm(&row_pointers[y-1][(x + 1) * 4], &row_pointers[y][x * 4]);
+        }
+    }
+    if (x != width - 1)
+    {
+        ans += norm(&row_pointers[y][(x + 1) * 4], &row_pointers[y][x * 4]);
+        if (y != height - 1) {
+            ans += norm(&row_pointers[y+1][(x + 1) * 4], &row_pointers[y][x * 4]);
+        }
+    }
+    if (y != height - 1)
+    {
+        ans += norm(&row_pointers[y + 1][x * 4], &row_pointers[y][x * 4]);
+    }
+    return ans;
+}
+#endif
 
 int **alloc_weights()
 {
@@ -90,21 +132,36 @@ void erase(int *row, int x)
 }
 void erase_px(png_bytep row, int x)
 {
+    #if COPY_ALGO == 1
     for (int i = x; i < width - PX_DEL_COUNT; i++)
     {
-        // png_bytep px = &(row[i * 4]);
-        // png_bytep px_next = &(row[(i+1) * 4]);
-        // for (int j = 0; j < 4; j++) {
-        //     px[j] = px_next[j];//можно ускорить копирование
-        // }
+        
         int *px = (int *)&(row[i * 4]);
         int *px_next = (int *)&(row[(i + PX_DEL_COUNT) * 4]);
         *px = *px_next;
+        
+
     }
+    #elif COPY_ALGO == 2
+    if (width - x - PX_DEL_COUNT > 0) {
+        memmove(&row[x*4], &row[(x+PX_DEL_COUNT)*4], 4 * (width - x - PX_DEL_COUNT) * sizeof(char));
+    }
+    #endif
 }
 
 void reduce_path(int **weights)
 {
+    //заполняем таблицу с весами пикселей
+    for (int y = 0; y < height; y++)
+    {
+        png_bytep row = row_pointers[y];
+        int *w_row = weights[y];
+        for (int x = 0; x < width; x++)
+        {
+            int *w_px = &w_row[x];
+            *w_px = px_weight(x, y);
+        }
+    }
     // заменяем веса точек на веса путей до точки сверху вниз
     for (int y = 1; y < height; y++)
     {
@@ -146,6 +203,7 @@ void reduce_path(int **weights)
                 next_x = start_x - 1;
             }
         }
+
         if (start_x != width - 1)
         {
             c = w_next_row[start_x + 1];
@@ -162,17 +220,7 @@ void reduce_path(int **weights)
 void process_png_file(int final_width)
 {
     int **weights = alloc_weights();
-    //заполняем таблицу с весами пикселей
-    for (int y = 0; y < height; y++)
-    {
-        png_bytep row = row_pointers[y];
-        int *w_row = weights[y];
-        for (int x = 0; x < width; x++)
-        {
-            int *w_px = &w_row[x];
-            *w_px = px_weight(x, y);
-        }
-    }
+    
     int save_width = width;
     while (width > final_width)
     {
@@ -185,12 +233,15 @@ int reduce_image(char *filename, int final_width)
 {
     read_png_file(filename);
     assert(final_width > 0 && final_width <= width);
+    struct timespec tstart = {0, 0}, tend = {0, 0};
+    clock_gettime(CLOCK_MONOTONIC, &tstart);
     process_png_file(final_width);
-    printf("width=%d\n", width);
+    clock_gettime(CLOCK_MONOTONIC, &tend);
+    double time = tend.tv_sec + 1.0e-9 * tend.tv_nsec - tstart.tv_sec - 1.0e-9 * tstart.tv_nsec;
+    printf("width=%d;  time=%.3lf\n", width, time);
     write_png_file("out.png");
 }
 int main()
 {
-    printf("asdf\n");
-    reduce_image("salivan.png", 200);
+    reduce_image("salivan.png", 300);
 }
