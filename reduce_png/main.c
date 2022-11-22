@@ -191,7 +191,7 @@ void reduce_path(int **weights)
         png_bytep row = row_pointers[y];
 
         start_x = next_x;
-        erase(w_row, start_x);
+        //erase(w_row, start_x);
         erase_px(row, start_x);
         int a = INT_MAX, b = w_next_row[start_x], c = INT_MAX;
 
@@ -213,7 +213,7 @@ void reduce_path(int **weights)
             }
         }
     }
-    erase(weights[0], next_x);
+    //erase(weights[0], next_x);
     erase_px(row_pointers[0], next_x);
     width -= PX_DEL_COUNT; //уменьшаем глобальную ширину
 }
@@ -235,7 +235,9 @@ int reduce_image(char *filename, int final_width)
     assert(final_width > 0 && final_width <= width);
     struct timespec tstart = {0, 0}, tend = {0, 0};
     clock_gettime(CLOCK_MONOTONIC, &tstart);
+
     process_png_file(final_width);
+    
     clock_gettime(CLOCK_MONOTONIC, &tend);
     double time = tend.tv_sec + 1.0e-9 * tend.tv_nsec - tstart.tv_sec - 1.0e-9 * tstart.tv_nsec;
     printf("width=%d;  time=%.3lf\n", width, time);
