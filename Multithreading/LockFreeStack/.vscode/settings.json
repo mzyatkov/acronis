@@ -1,0 +1,13 @@
+{
+    "files.associations": {
+        "condition_variable": "cpp",
+        "mutex": "cpp",
+        "atomic": "cpp",
+        "compare": "cpp",
+        "cstdint": "cpp",
+        "cmath": "cpp",
+        "*.tcc": "cpp",
+        "new": "cpp",
+        "system_error": "cpp"
+    }
+}
